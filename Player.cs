@@ -1,11 +1,26 @@
 using Godot;
+using System.Runtime.Remoting.Metadata;
 
 public class Player : KinematicBody2D
 {
+	[Signal]
+	public delegate void GameWon();
+
+	[Signal]
+	public delegate void PlayerDied();
+
 	[Export]
 	public int speed = 400;
 
 	public Vector2 velocity = new Vector2();
+
+	public Vector2 startPosition = new Vector2();
+
+
+	public override void _Ready()
+	{
+		startPosition = Position;
+	}
 
 	public void GetInput()
 	{
@@ -30,5 +45,21 @@ public class Player : KinematicBody2D
 	{
 		GetInput();
 		velocity = MoveAndSlide(velocity);
+
+		for (int i = 0; i < GetSlideCount(); i++)
+		{
+			var collision = GetSlideCollision(i);
+			if (collision.Collider is Enemy)
+			{
+				EmitSignal(nameof(PlayerDied));
+				Position = startPosition;
+				break;
+			}
+		}
+	}
+
+	private void _on_End_body_entered(object body)
+	{
+		EmitSignal(nameof(GameWon));
 	}
 }
